@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Samsung Smart Clock - ResponsiveVoice Edition</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <!-- INI DIA JURUS TERAKHIR: Script ResponsiveVoice untuk HP Jadul -->
+    <script src="https://code.responsivevoice.org/responsivevoice.js"></script>
+    
+    <style>
+        body, html {
+            margin: 0; padding: 0;
+            width: 100vw; height: 100vh;
+            background-color: #000000;
+            overflow: hidden;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            transition: background-color 1s ease;
+        }
+
+        #start-screen {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #000000; color: #555;
+            display: flex; justify-content: center; align-items: center;
+            text-align: center; z-index: 100; cursor: pointer; flex-direction: column;
+        }
+        #start-screen h2 { font-size: 24px; margin-bottom: 10px; color: #b33939; }
+
+        #clock-container {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center; color: #b33939; 
+            transition: top 2s ease-in-out, left 2s ease-in-out, color 2s ease;
+            white-space: nowrap;
+        }
+        #time {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 26vw; font-weight: bold; line-height: 1;
+            text-shadow: 0 0 15px rgba(0,0,0,0.8); letter-spacing: -2px;
+        }
+        #date {
+            font-size: 4.5vw; margin-top: 5px; font-weight: 500;
+            letter-spacing: 2px; opacity: 0.8; text-transform: uppercase;
+        }
+
+        #menu-toggle-btn {
+            position: absolute; top: 15px; right: 15px;
+            background: transparent; color: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 5px;
+            padding: 8px 12px; font-size: 16px; cursor: pointer;
+            z-index: 10; display: none; 
+        }
+
+        #control-panel {
+            position: absolute; top: 10px; right: 10px;
+            background: rgba(20, 20, 20, 0.95); padding: 15px;
+            border-radius: 8px; z-index: 20; display: none;
+            border: 1px solid #333; max-width: 250px;
+        }
+        #control-panel h3 { margin: 0 0 10px 0; font-size: 14px; color: #ccc; text-align: center; }
+        button.ctrl-btn {
+            width: 100%; background-color: #333; color: #ddd;
+            border: 1px solid #555; padding: 10px; margin-bottom: 8px;
+            cursor: pointer; border-radius: 4px; font-size: 12px; font-weight: bold;
+        }
+        button.ctrl-btn:hover { background-color: #555; }
+        .minimize-btn { background-color: #7b2c2c !important; }
+        .test-all-btn { background-color: #2b5a28 !important; }
+    </style>
+</head>
+<body>
+
+    <div id="start-screen" onclick="startSmartClock()">
+        <h2>⚡ KETUK LAYAR ⚡</h2>
+        <p>Aktifkan Smart Clock Samsung</p>
+    </div>
+
+    <button id="menu-toggle-btn" onclick="showMenu()">⚙️ Menu</button>
+
+    <div id="control-panel">
+        <h3>Uji Coba & Kontrol</h3>
+        <button class="ctrl-btn test-all-btn" onclick="testFullAudio()">▶️ Test Audio Lengkap</button>
+        <button class="ctrl-btn" onclick="testFeature('sholat')">Test Waktu Sholat</button>
+        <button class="ctrl-btn" onclick="testFeature('terbit')">Test Sapaan Pagi</button>
+        <button class="ctrl-btn" onclick="testFeature('dnd')">Test Sapaan Malam (DND)</button>
+        <button class="ctrl-btn minimize-btn" onclick="hideMenu()">✖ Minimize</button>
+    </div>
+
+    <div id="clock-container">
+        <div id="time">00:00</div>
+        <div id="date">Memuat...</div>
+    </div>
+
+    <script>
+        const amoledSafeColors = ['#b33939', '#8a2b06', '#9c8b35', '#4b7549', '#5b3a63', '#666666'];
+        
+        const jadwalSholat = {
+            "04:12": "Subuh", "05:31": "Terbit", "11:27": "Zuhur", 
+            "14:49": "Asar", "17:23": "Magrib", "18:34": "Isya"
+        };
+
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        const delay = ms => new Promise(res => setTimeout(res, ms));
+
+        const notes = {
+            'G3': 196.00, 'A3': 220.00, 'B3': 246.94, 'C4': 261.63, 'C#4': 277.18, 'D4': 293.66, 'E4': 329.63, 'F4': 349.23, 'F#4': 369.99, 'G4': 392.00, 'A4': 440.00, 'B4': 493.88,
+            'C5': 523.25, 'C#5': 554.37, 'D5': 587.33, 'E5': 659.25, 'F#5': 739.99
+        };
+
+        function playPiano(noteName, stepDelay) {
+            return new Promise(resolve => {
+                initAudio();
+                const freq = notes[noteName] || 261.63;
+                const osc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                const filter = audioCtx.createBiquadFilter();
+
+                osc.type = 'triangle'; osc.frequency.value = freq;
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(800, audioCtx.currentTime);
+                filter.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 1.5);
+
+                gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.4, audioCtx.currentTime + 0.02); 
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 2.5);
+
+                osc.connect(filter); filter.connect(gainNode); gainNode.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + 3);
+                setTimeout(resolve, stepDelay * 1000);
+            });
+        }
+
+        function playVintageGong() {
+            return new Promise(resolve => {
+                initAudio();
+                const duration = 4.5; 
+                const osc1 = audioCtx.createOscillator(); const osc2 = audioCtx.createOscillator(); const osc3 = audioCtx.createOscillator(); 
+                const gainNode = audioCtx.createGain();
+
+                osc1.type = 'sine'; osc1.frequency.value = 130.81; 
+                osc2.type = 'sine'; osc2.frequency.value = 261.63; 
+                osc3.type = 'triangle'; osc3.frequency.value = 349.23; 
+
+                gainNode.gain.setValueAtTime(0.6, audioCtx.currentTime); 
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+                osc1.connect(gainNode); osc2.connect(gainNode); osc3.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                osc1.start(); osc2.start(); osc3.start();
+                osc1.stop(audioCtx.currentTime + duration); osc2.stop(audioCtx.currentTime + duration); osc3.stop(audioCtx.currentTime + duration);
+                setTimeout(resolve, 1500); 
+            });
+        }
+
+        async function playClassicMelody(hour12) {
+            const melody = [ {n:'E4', d:0.5}, {n:'E4', d:0.5}, {n:'F4', d:0.5}, {n:'G4', d:0.5}, {n:'G4', d:0.5}, {n:'F4', d:0.5}, {n:'E4', d:0.5}, {n:'D4', d:0.5}, {n:'C4', d:1.0} ];
+            for (let note of melody) { await playPiano(note.n, note.d); }
+            await delay(500); 
+        }
+
+        // ====================================================================
+        // FUNGSI TTS MENGGUNAKAN RESPONSIVE VOICE (Kebal Error HP Jadul)
+        // ====================================================================
+        function speak(text) {
+            return new Promise(resolve => {
+                try {
+                    // Jika masih ada suara, batalkan dulu
+                    if(responsiveVoice.isPlaying()) {
+                        responsiveVoice.cancel();
+                    }
+                    
+                    // Panggil mesin ResponsiveVoice
+                    responsiveVoice.speak(text, "Indonesian Female", {
+                        pitch: 1.0,
+                        rate: 0.85,
+                        volume: 1.0,
+                        onend: function() {
+                            resolve(); // Lanjut ke kode berikutnya setelah selesai ngomong
+                        },
+                        onerror: function(e) {
+                            console.log("ResponsiveVoice Error:", e);
+                            resolve();
+                        }
+                    });
+                } catch (e) {
+                    console.log("Library gagal dimuat:", e);
+                    resolve();
+                }
+            });
+        }
+
+        let lastMinute = -1;
+
+        async function triggerNotification(hour24, minute, isTest = false) {
+            let hour12 = hour24 % 12;
+            hour12 = hour12 ? hour12 : 12; 
+            let isDND = (hour24 >= 22 || hour24 < 4);
+
+            if (minute === 0) {
+                if (hour24 === 22 && !isTest) {
+                    await speak("Mode jangan ganggu telah diaktifkan. Waktunya istirahat. Selamat malam dan selamat tidur.");
+                    return; 
+                }
+
+                if (isDND && !isTest) return;
+
+                await playClassicMelody(hour12);
+                let speechText = `Sekarang jam ${hour12} tepat.`;
+                if (hour24 === 21) speechText += " Peringatan, fitur jangan ganggu akan diaktifkan pada jam 10 malam.";
+                
+                await speak(speechText);
+                await delay(800);
+                for(let i = 0; i < hour12; i++) { await playVintageGong(); }
+
+            } else if (minute === 15 || minute === 30 || minute === 45) {
+                if (isDND && !isTest) return; 
+                initAudio(); 
+                await speak(`Sekarang jam ${hour12} lebih ${minute} menit.`);
+            }
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const currentTimeStr = `${hours}:${minutes}`;
+            
+            document.getElementById('time').innerText = currentTimeStr;
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const dateString = now.toLocaleDateString('id-ID', options);
+            document.getElementById('date').innerText = dateString;
+
+            if (now.getMinutes() !== lastMinute) {
+                lastMinute = now.getMinutes();
+
+                if (jadwalSholat[currentTimeStr]) {
+                    initAudio();
+                    if (jadwalSholat[currentTimeStr] === "Terbit") {
+                        speak(`Selamat pagi! Saat ini telah memasuki waktu terbit. Hari ini adalah hari ${dateString}. Awali pagi ini dengan semangat.`);
+                    } else {
+                        speak(`Saat ini telah memasuki waktu sholat ${jadwalSholat[currentTimeStr]}.`);
+                    }
+                }
+
+                if (lastMinute === 0 || lastMinute === 15 || lastMinute === 30 || lastMinute === 45) {
+                    triggerNotification(now.getHours(), lastMinute);
+                }
+
+                const container = document.getElementById('clock-container');
+                const randomTop = 45 + (Math.random() * 10); 
+                const randomLeft = 45 + (Math.random() * 10); 
+                container.style.top = `${randomTop}%`;
+                container.style.left = `${randomLeft}%`;
+
+                const randomColor = amoledSafeColors[Math.floor(Math.random() * amoledSafeColors.length)];
+                container.style.color = randomColor;
+            }
+        }
+
+        function requestFullScreen() {
+            const elem = document.documentElement;
+            if (elem.requestFullscreen) { elem.requestFullscreen(); } 
+            else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); } 
+        }
+
+        function startSmartClock() {
+            initAudio(); 
+            document.getElementById('start-screen').style.display = 'none'; 
+            document.getElementById('menu-toggle-btn').style.display = 'block';
+            requestFullScreen(); 
+            
+            // Pancing library agar jalan pertama kali
+            speak("Sistem jam pintar menyala.");
+            
+            updateClock();
+            setInterval(updateClock, 1000);
+        }
+
+        function showMenu() {
+            document.getElementById('control-panel').style.display = 'block';
+            document.getElementById('menu-toggle-btn').style.display = 'none';
+        }
+
+        function hideMenu() {
+            document.getElementById('control-panel').style.display = 'none';
+            document.getElementById('menu-toggle-btn').style.display = 'block';
+            requestFullScreen();
+        }
+
+        async function testFullAudio() {
+            hideMenu();
+            initAudio();
+            await playClassicMelody(3);
+            await speak("Ini adalah uji coba suara lengkap. Semua berfungsi dengan sangat baik. Sekarang jam 3 tepat.");
+            await delay(800);
+            for(let i=0; i<3; i++) { await playVintageGong(); }
+        }
+
+        function testFeature(type) {
+            hideMenu();
+            initAudio();
+            if (type === 'sholat') speak("Saat ini telah memasuki waktu sholat Magrib.");
+            else if (type === 'terbit') speak("Selamat pagi! Saat ini telah memasuki waktu terbit, waktunya bangun dan memulai hari.");
+            else if (type === 'dnd') speak("Mode jangan ganggu telah diaktifkan. Selamat malam.");
+        }
+
+        const initialNow = new Date();
+        document.getElementById('time').innerText = `${String(initialNow.getHours()).padStart(2, '0')}:${String(initialNow.getMinutes()).padStart(2, '0')}`;
+        document.getElementById('date').innerText = initialNow.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+    </script>
+</body>
+</html>
