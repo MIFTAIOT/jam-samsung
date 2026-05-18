@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Samsung Smart Clock - Ultimate EWS Edition</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <!-- Script ResponsiveVoice untuk TTS Multi-Bahasa HP Jadul -->
+    <script src="https://code.responsivevoice.org/responsivevoice.js"></script>
+    
+    <style>
+        body, html {
+            margin: 0; padding: 0;
+            width: 100vw; height: 100vh;
+            background-color: #000000;
+            overflow: hidden;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            transition: background-color 1s ease;
+        }
+
+        #start-screen {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #000000; color: #555;
+            display: flex; justify-content: center; align-items: center;
+            text-align: center; z-index: 100; cursor: pointer; flex-direction: column;
+        }
+        #start-screen h2 { font-size: 24px; margin-bottom: 10px; color: #b33939; }
+
+        #clock-container {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center; color: #b33939; 
+            transition: top 2s ease-in-out, left 2s ease-in-out, color 2s ease;
+            white-space: nowrap;
+        }
+        #time {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 26vw; font-weight: bold; line-height: 1;
+            text-shadow: 0 0 15px rgba(0,0,0,0.8); letter-spacing: -2px;
+        }
+        #date {
+            font-size: 4.5vw; margin-top: 5px; font-weight: 500;
+            letter-spacing: 2px; opacity: 0.8; text-transform: uppercase;
+        }
+
+        #menu-toggle-btn {
+            position: absolute; top: 15px; right: 15px;
+            background: transparent; color: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 5px;
+            padding: 8px 12px; font-size: 16px; cursor: pointer;
+            z-index: 10; display: none; 
+        }
+
+        #control-panel {
+            position: absolute; top: 10px; right: 10px;
+            background: rgba(20, 20, 20, 0.95); padding: 15px;
+            border-radius: 8px; z-index: 20; display: none;
+            border: 1px solid #333; max-width: 300px; max-height: 90vh; overflow-y: auto;
+        }
+        #control-panel h3 { margin: 0 0 10px 0; font-size: 14px; color: #ccc; text-align: center; }
+        
+        .grid-btn-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 10px; }
+        .grid-btn-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 10px; }
+        
+        button.ctrl-btn {
+            width: 100%; background-color: #333; color: #ddd;
+            border: 1px solid #555; padding: 8px 4px; 
+            cursor: pointer; border-radius: 4px; font-size: 11px; font-weight: bold;
+        }
+        button.ctrl-btn:hover { background-color: #555; }
+        .full-btn { grid-column: span 2; background-color: #2b5a28; }
+        .school-btn { grid-column: span 2; background-color: #b36b00; }
+        .minimize-btn { grid-column: span 2; background-color: #7b2c2c; margin-top: 5px; }
+        .title-txt { font-size: 11px; color: #aaa; margin-bottom: 5px; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <div id="start-screen" onclick="startSmartClock()">
+        <h2>⚡ KETUK LAYAR ⚡</h2>
+        <p>Aktifkan Smart Clock Kedamean</p>
+    </div>
+
+    <button id="menu-toggle-btn" onclick="showMenu()">⚙️ Menu Uji Coba</button>
+
+    <div id="control-panel">
+        <h3>Menu Uji Coba Lengkap</h3>
+        
+        <div class="title-txt">Test Fitur Pintar:</div>
+        <div class="grid-btn-2">
+            <button class="ctrl-btn full-btn" onclick="testFeature('weather')">☁️ Cuaca Kedamean</button>
+            <button class="ctrl-btn school-btn" onclick="testFeature('school')">🎒 Alarm Sekolah</button>
+            <button class="ctrl-btn" onclick="testFeature('sholat')">🕌 Sholat</button>
+            <button class="ctrl-btn" onclick="testFeature('15min')">⏳ 15 Menit</button>
+            <button class="ctrl-btn" onclick="testFeature('terbit')">🌅 Pagi</button>
+            <button class="ctrl-btn" onclick="testFeature('dnd')">🌙 Malam</button>
+        </div>
+
+        <div class="title-txt">Test 12 Melodi Jam:</div>
+        <div class="grid-btn-4">
+            <button class="ctrl-btn" onclick="testFullAudio(1)">Jam 1</button>
+            <button class="ctrl-btn" onclick="testFullAudio(2)">Jam 2</button>
+            <button class="ctrl-btn" onclick="testFullAudio(3)">Jam 3</button>
+            <button class="ctrl-btn" onclick="testFullAudio(4)">Jam 4</button>
+            <button class="ctrl-btn" onclick="testFullAudio(5)">Jam 5</button>
+            <button class="ctrl-btn" onclick="testFullAudio(6)">Jam 6</button>
+            <button class="ctrl-btn" onclick="testFullAudio(7)">Jam 7</button>
+            <button class="ctrl-btn" onclick="testFullAudio(8)">Jam 8</button>
+            <button class="ctrl-btn" onclick="testFullAudio(9)">Jam 9</button>
+            <button class="ctrl-btn" onclick="testFullAudio(10)">Jam 10</button>
+            <button class="ctrl-btn" onclick="testFullAudio(11)">Jam 11</button>
+            <button class="ctrl-btn" onclick="testFullAudio(12)">Jam 12</button>
+        </div>
+
+        <div class="grid-btn-2">
+            <button class="ctrl-btn minimize-btn" onclick="hideMenu()">✖ Sembunyikan Panel</button>
+        </div>
+    </div>
+
+    <div id="clock-container">
+        <div id="time">00:00</div>
+        <div id="date">Memuat...</div>
+    </div>
+
+    <script>
+        // ========================================================
+        // 1. PENGATURAN API CUACA OPENWEATHERMAP (KOORDINAT KEDAMEAN)
+        // ========================================================
+        const API_KEY = "33d987ce7bc684062ae339cd177b4395"; 
+        const LAT = "-7.3248"; // Titik akurat Kedamean, Gresik
+        const LON = "112.5492";
+
+        async function fetchWeather() {
+            try {
+                let res = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${LAT}&lon=${LON}&appid=${API_KEY}&units=metric&lang=id`);
+                if (!res.ok) throw new Error("API Error / Key Belum Aktif");
+                let data = await res.json();
+                return {
+                    temp: Math.round(data.main.temp),
+                    descID: data.weather[0].description,
+                    descEN: data.weather[0].main
+                };
+            } catch(e) {
+                console.log("Gagal ambil cuaca:", e.message);
+                return null;
+            }
+        }
+
+        const amoledSafeColors = ['#b33939', '#8a2b06', '#9c8b35', '#4b7549', '#5b3a63', '#666666'];
+        const jadwalSholat = { "04:12": "Subuh", "05:31": "Terbit", "11:27": "Zuhur", "14:49": "Asar", "17:23": "Magrib", "18:34": "Isya" };
+
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        const delay = ms => new Promise(res => setTimeout(res, ms));
+
+        // ========================================================
+        // 2. SISTEM AUDIO (MELODI & GONG)
+        // ========================================================
+        const notes = {
+            'G3': 196.00, 'A3': 220.00, 'B3': 246.94, 'C4': 261.63, 'C#4': 277.18, 'D4': 293.66, 'D#4': 311.13, 'E4': 329.63, 'F4': 349.23, 'F#4': 369.99, 'G4': 392.00, 'G#4': 415.30, 'A4': 440.00, 'B4': 493.88,
+            'C5': 523.25, 'C#5': 554.37, 'D5': 587.33, 'D#5': 622.25, 'E5': 659.25, 'F5': 698.46, 'F#5': 739.99, 'G5': 783.99, 'A5': 880.00
+        };
+
+        function playPiano(noteName, stepDelay) {
+            return new Promise(resolve => {
+                initAudio();
+                const freq = notes[noteName] || 261.63;
+                const osc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                const filter = audioCtx.createBiquadFilter();
+
+                osc.type = 'triangle'; osc.frequency.value = freq;
+                filter.type = 'lowpass'; filter.frequency.setValueAtTime(800, audioCtx.currentTime); filter.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 1.5);
+                gainNode.gain.setValueAtTime(0, audioCtx.currentTime); gainNode.gain.linearRampToValueAtTime(0.4, audioCtx.currentTime + 0.02); gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 2.5);
+
+                osc.connect(filter); filter.connect(gainNode); gainNode.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + 3);
+                setTimeout(resolve, stepDelay * 1000);
+            });
+        }
+
+        function playVintageGong() {
+            return new Promise(resolve => {
+                initAudio();
+                const duration = 4.5; 
+                const osc1 = audioCtx.createOscillator(); const osc2 = audioCtx.createOscillator(); const osc3 = audioCtx.createOscillator(); 
+                const gainNode = audioCtx.createGain();
+
+                osc1.type = 'sine'; osc1.frequency.value = 130.81; osc2.type = 'sine'; osc2.frequency.value = 261.63; osc3.type = 'triangle'; osc3.frequency.value = 349.23; 
+                gainNode.gain.setValueAtTime(0.6, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+                osc1.connect(gainNode); osc2.connect(gainNode); osc3.connect(gainNode); gainNode.connect(audioCtx.destination);
+                osc1.start(); osc2.start(); osc3.start();
+                osc1.stop(audioCtx.currentTime + duration); osc2.stop(audioCtx.currentTime + duration); osc3.stop(audioCtx.currentTime + duration);
+                setTimeout(resolve, 1500); 
+            });
+        }
+
+        function playCustomAudio(filename) {
+            return new Promise((resolve) => {
+                let audio = new Audio(filename);
+                audio.onended = resolve;
+                audio.onerror = resolve; // Lanjut walau ada error
+                audio.play().catch(e => {
+                    console.log("Audio play error:", e);
+                    resolve();
+                });
+            });
+        }
+
+        async function playClassicMelody(hour12) {
+            const melodies = {
+                1: [ {n:'D4', d:0.5}, {n:'F#4', d:0.5}, {n:'A4', d:0.5}, {n:'F#4', d:0.5}, {n:'D4', d:0.5}, {n:'A3', d:0.5}, {n:'D4', d:0.5}, {n:'F#4', d:1.0} ], 
+                2: [ {n:'E4', d:0.8}, {n:'C4', d:0.8}, {n:'D4', d:0.8}, {n:'G3', d:1.2}, {n:'G3', d:0.8}, {n:'D4', d:0.8}, {n:'E4', d:0.8}, {n:'C4', d:1.0} ], 
+                3: [ {n:'E4', d:0.5}, {n:'E4', d:0.5}, {n:'F4', d:0.5}, {n:'G4', d:0.5}, {n:'G4', d:0.5}, {n:'F4', d:0.5}, {n:'E4', d:0.5}, {n:'D4', d:0.5}, {n:'C4', d:1.0} ], 
+                4: [ {n:'G4', d:0.6}, {n:'D4', d:0.6}, {n:'G4', d:0.6}, {n:'D4', d:0.6}, {n:'G4', d:0.4}, {n:'B4', d:0.4}, {n:'D5', d:1.2} ], 
+                5: [ {n:'E4', d:0.6}, {n:'E4', d:0.6}, {n:'G4', d:1.2}, {n:'E4', d:0.6}, {n:'E4', d:0.6}, {n:'G4', d:1.2} ], 
+                6: [ {n:'D5', d:0.6}, {n:'C#5', d:0.6}, {n:'B4', d:0.6}, {n:'A4', d:0.6}, {n:'G4', d:0.6}, {n:'F#4', d:0.6}, {n:'E4', d:1.2} ], 
+                7: [ {n:'E4', d:0.4}, {n:'E4', d:0.4}, {n:'E4', d:0.6}, {n:'C#5', d:0.5}, {n:'B4', d:0.5}, {n:'A4', d:0.5}, {n:'G#4', d:0.5}, {n:'A4', d:1.0} ], 
+                8: [ {n:'C4', d:0.6}, {n:'C4', d:0.6}, {n:'G4', d:0.6}, {n:'G4', d:0.6}, {n:'A4', d:0.6}, {n:'A4', d:0.6}, {n:'G4', d:1.2} ], 
+                9: [ {n:'C4', d:0.6}, {n:'C4', d:0.6}, {n:'E4', d:0.6}, {n:'G4', d:0.8}, {n:'G4', d:0.8}, {n:'E4', d:0.8}, {n:'C4', d:1.0} ], 
+                10:[ {n:'B4', d:0.8}, {n:'E4', d:0.6}, {n:'F#4', d:0.6}, {n:'G4', d:0.6}, {n:'F#4', d:0.6}, {n:'E4', d:1.2} ], 
+                11:[ {n:'E5', d:0.4}, {n:'D#5', d:0.4}, {n:'E5', d:0.4}, {n:'D#5', d:0.4}, {n:'E5', d:0.4}, {n:'B4', d:0.4}, {n:'D5', d:0.4}, {n:'C5', d:0.4}, {n:'A4', d:1.2} ], 
+                12:[ {n:'G4', d:0.6}, {n:'E4', d:0.6}, {n:'D4', d:0.6}, {n:'C4', d:0.6}, {n:'D4', d:0.6}, {n:'E4', d:0.6}, {n:'C4', d:1.2} ] 
+            };
+            const song = melodies[hour12] || melodies[1];
+            for (let note of song) { await playPiano(note.n, note.d); }
+            await delay(500); 
+        }
+
+        // ========================================================
+        // 3. FUNGSI TTS BILINGUAL (RESPONSIVE VOICE)
+        // ========================================================
+        function speak(text, voiceType = "Indonesian Female") {
+            return new Promise(resolve => {
+                try {
+                    if(responsiveVoice.isPlaying()) responsiveVoice.cancel();
+                    responsiveVoice.speak(text, voiceType, {
+                        pitch: 1.0, rate: 0.85, volume: 1.0,
+                        onend: function() { resolve(); },
+                        onerror: function(e) { resolve(); }
+                    });
+                } catch (e) { resolve(); }
+            });
+        }
+
+        // ========================================================
+        // 4. LOGIKA NOTIFIKASI UTAMA (JAM, CUACA, SEKOLAH)
+        // ========================================================
+        let lastMinute = -1;
+
+        async function triggerNotification(hour24, minute, isTest = false) {
+            let hour12 = hour24 % 12; hour12 = hour12 ? hour12 : 12; 
+            let isDND = (hour24 >= 22 || hour24 < 4);
+            let today = new Date().getDay(); 
+
+            if (minute === 0) {
+                if (hour24 === 22 && !isTest) {
+                    await speak("Mode jangan ganggu telah diaktifkan. Waktunya istirahat. Selamat malam.", "Indonesian Female");
+                    await delay(300);
+                    await speak("Do not disturb mode is activated. Good night.", "US English Female");
+                    return; 
+                }
+
+                if (isDND && !isTest) return;
+
+                // 1. Putar Melodi (Akan beda tiap jam)
+                await playClassicMelody(hour12);
+                
+                // 2. Baca Jam (Bilingual)
+                await speak(`Sekarang jam ${hour12} tepat.`, "Indonesian Female");
+                await delay(300);
+                await speak(`It is exactly ${hour12} o'clock.`, "US English Female");
+                await delay(300);
+
+                // 3. Pengingat Mandi & Sekolah SMANIKE (06:00, Senin-Jumat)
+                let isSchoolDay = (today >= 1 && today <= 5);
+                if (hour24 === 6 && isSchoolDay) {
+                    await speak("Waktunya mandi dan bersiap ke sekolah. Semangat memulai hari!", "Indonesian Female");
+                    await delay(300);
+                    await speak("Time to take a bath and get ready for school. Have a great day!", "US English Female");
+                    await delay(300);
+                }
+
+                // 4. Baca Cuaca EWS Kedamean
+                let weather = await fetchWeather();
+                if (weather) {
+                    await speak(`Kondisi cuaca di Kedamean saat ini ${weather.descID}, dengan suhu ${weather.temp} derajat celcius.`, "Indonesian Female");
+                    await delay(300);
+                    await speak(`Current weather is ${weather.descEN}, with temperature of ${weather.temp} degrees celsius.`, "US English Female");
+                    await delay(300);
+                }
+
+                // 5. Bunyi Gong Penutup sesuai jumlah jam
+                for(let i = 0; i < hour12; i++) { await playVintageGong(); }
+
+            } else if (minute === 15 || minute === 30 || minute === 45) {
+                if (isDND && !isTest) return; 
+                initAudio(); 
+                await playCustomAudio('audio.mp3');
+                await speak(`Sekarang jam ${hour12} lebih ${minute} menit.`, "Indonesian Female");
+                await delay(200);
+                await speak(`It is ${minute} minutes past ${hour12}.`, "US English Female");
+            }
+        }
+
+        // ========================================================
+        // 5. PEMBARUAN VISUAL & PENGECEKAN TIAP DETIK
+        // ========================================================
+        async function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const currentTimeStr = `${hours}:${minutes}`;
+            
+            document.getElementById('time').innerText = currentTimeStr;
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('date').innerText = now.toLocaleDateString('id-ID', options);
+
+            if (now.getMinutes() !== lastMinute) {
+                lastMinute = now.getMinutes();
+
+                if (jadwalSholat[currentTimeStr]) {
+                    initAudio();
+                    if (jadwalSholat[currentTimeStr] === "Terbit") {
+                        await speak(`Selamat pagi! Saat ini telah memasuki waktu terbit.`, "Indonesian Female");
+                    } else {
+                        await playCustomAudio('audio.mp3');
+                        await speak(`Saat ini telah memasuki waktu sholat ${jadwalSholat[currentTimeStr]}.`, "Indonesian Female");
+                    }
+                }
+
+                if (lastMinute === 0 || lastMinute === 15 || lastMinute === 30 || lastMinute === 45) {
+                    await triggerNotification(now.getHours(), lastMinute);
+                }
+
+                const container = document.getElementById('clock-container');
+                container.style.top = `${45 + (Math.random() * 10)}%`;
+                container.style.left = `${45 + (Math.random() * 10)}%`;
+                container.style.color = amoledSafeColors[Math.floor(Math.random() * amoledSafeColors.length)];
+            }
+        }
+
+        function requestFullScreen() {
+            const elem = document.documentElement;
+            if (elem.requestFullscreen) { elem.requestFullscreen(); } 
+            else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); } 
+        }
+
+        function startSmartClock() {
+            initAudio(); 
+            document.getElementById('start-screen').style.display = 'none'; 
+            document.getElementById('menu-toggle-btn').style.display = 'block';
+            requestFullScreen(); 
+            speak("Sistem jam pintar siap digunakan.", "Indonesian Female");
+            updateClock();
+            setInterval(updateClock, 1000);
+        }
+
+        function showMenu() {
+            document.getElementById('control-panel').style.display = 'block';
+            document.getElementById('menu-toggle-btn').style.display = 'none';
+        }
+
+        function hideMenu() {
+            document.getElementById('control-panel').style.display = 'none';
+            document.getElementById('menu-toggle-btn').style.display = 'block';
+            requestFullScreen();
+        }
+
+        // ========================================================
+        // 6. FUNGSI UJI COBA
+        // ========================================================
+        function testFullAudio(hour) {
+            hideMenu(); initAudio();
+            triggerNotification(hour, 0, true);
+        }
+
+        async function testFeature(type) {
+            hideMenu(); initAudio();
+            if (type === 'sholat') {
+                await playCustomAudio('audio.mp3');
+                await speak("Saat ini telah memasuki waktu sholat Magrib.", "Indonesian Female");
+            } else if (type === '15min') {
+                triggerNotification(10, 15, true);
+            } else if (type === 'weather') {
+                let weather = await fetchWeather();
+                if (weather) {
+                    await speak(`Cuaca di Kedamean saat ini ${weather.descID}, dengan suhu ${weather.temp} derajat celcius.`, "Indonesian Female");
+                    await delay(300);
+                    await speak(`Current weather is ${weather.descEN}, with temperature of ${weather.temp} degrees celsius.`, "US English Female");
+                } else {
+                    await speak("Data cuaca belum tersedia. Tunggu beberapa saat agar API aktif.", "Indonesian Female");
+                }
+            } else if (type === 'school') {
+                await playClassicMelody(6);
+                await speak(`Sekarang jam 6 tepat.`, "Indonesian Female");
+                await delay(300);
+                await speak(`It is exactly 6 o'clock.`, "US English Female");
+                await delay(300);
+                await speak("Waktunya mandi dan bersiap ke sekolah. Semangat memulai hari!", "Indonesian Female");
+                await delay(300);
+                await speak("Time to take a bath and get ready for school. Have a great day!", "US English Female");
+                await delay(300);
+                for(let i = 0; i < 6; i++) { await playVintageGong(); }
+            } else if (type === 'terbit') {
+                await speak("Selamat pagi! Saat ini telah memasuki waktu terbit, waktunya bangun.", "Indonesian Female");
+            } else if (type === 'dnd') {
+                await speak("Mode jangan ganggu telah diaktifkan. Selamat malam.", "Indonesian Female");
+                await delay(300);
+                await speak("Do not disturb mode is activated. Good night.", "US English Female");
+            }
+        }
+
+        const initialNow = new Date();
+        document.getElementById('time').innerText = `${String(initialNow.getHours()).padStart(2, '0')}:${String(initialNow.getMinutes()).padStart(2, '0')}`;
+        document.getElementById('date').innerText = initialNow.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+    </script>
+</body>
+</html>
